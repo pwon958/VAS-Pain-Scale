@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAS Pain Scale</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #scale-container {
+            width: 80%;
+            margin: 0 auto;
+            position: relative;
+            height: 50px;
+            border: 1px solid black;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #scale-line {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background-color: black;
+            transform: translateY(-50%);
+        }
+        #label-0, #label-10 {
+            position: absolute;
+            top: 100%;
+            font-size: 18px;
+        }
+        #label-0 {
+            left: 0;
+        }
+        #label-10 {
+            right: 0;
+        }
+        #red-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+        #value-display {
+            text-align: center;
+            margin-top: 10px;
+        }
+        #submit-btn {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VAS Pain Scale</h1>
+    <div id="scale-container">
+        <div id="scale-line"></div>
+        <div id="label-0">0</div>
+        <div id="label-10">10</div>
+        <div id="red-circle"></div>
+    </div>
+    <div id="value-display">Value: <span id="value">0.00</span></div>
+    <button id="submit-btn">Submit</button>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const scaleLine = document.getElementById('scale-line');
+            const redCircle = document.getElementById('red-circle');
+            const valueDisplay = document.getElementById('value');
+
+            const updateValue = (position) => {
+                const scaleWidth = scaleLine.offsetWidth;
+                const scaleLeft = scaleLine.getBoundingClientRect().left;
+                const relativePosition = position - scaleLeft;
+                const value = Math.min(10, Math.max(0, ((relativePosition / scaleWidth) * 10).toFixed(2)));
+                valueDisplay.innerText = value;
+                redCircle.style.left = `${(relativePosition / scaleWidth) * 100}%`;
+            };
+
+            const onPointerMove = (event) => {
+                updateValue(event.clientX);
+            };
+
+            const onPointerUp = () => {
+                document.removeEventListener('pointermove', onPointerMove);
+                document.removeEventListener('pointerup', onPointerUp);
+            };
+
+            redCircle.addEventListener('pointerdown', (event) => {
+                document.addEventListener('pointermove', onPointerMove);
+                document.addEventListener('pointerup', onPointerUp);
+            });
+
+            scaleLine.addEventListener('pointerdown', (event) => {
+                updateValue(event.clientX);
+            });
+
+            document.getElementById('submit-btn').addEventListener('click', () => {
+                const value = valueDisplay.innerText;
+                fetch('https://your-heroku-app.herokuapp.com/submit', {
+                    method: 'POST',
+                    body: JSON.stringify({ value: parseFloat(value) }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => console.log('Success:', data))
+                .catch((error) => console.error('Error:', error));
+            });
+        });
+    </script>
+</body>
+</html>
